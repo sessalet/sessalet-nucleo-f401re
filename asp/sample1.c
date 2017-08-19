@@ -167,7 +167,7 @@ void I2C_Dev_Search(){
     int i = 0;
     for(i=0; i<0xff;i=i+2){
 
-        uint8_t res=HAL_I2C_Master_Transmit(&hi2c1, i,(uint8_t*)0x00,0,50);
+        uint8_t res=HAL_I2C_Master_Transmit(&hi2c1, (uint16_t)i<<1,(uint8_t*)0x00,0,50);
         if(res==HAL_OK){
             FindDev[FindNum]=i;
             FindNum++;
@@ -308,13 +308,15 @@ void main_task(intptr_t exinf)
 	  int step = 0;
 //	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
 //	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-//	  I2C_Dev_Search();
+///	  I2C_Dev_Search(); //動いたよ！！
 
 //	    I2CCommonBegin();	//必ずtrueを返してるだけ。不要？
 
 	    rpr0521_wait_until_found(&hi2c1);
+///	    rpr0521_wait_until_found();
 	    syslog(LOG_INFO, "\nSensor found.\n\r");
-///	    rpr0521_initial_setup(&hi2c1);
+	    rpr0521_initial_setup(&hi2c1);
+///	    rpr0521_initial_setup();
 	    tslp_tsk(1000);
 
 	while(1){
@@ -338,6 +340,7 @@ void main_task(intptr_t exinf)
 */
 
 		rpr0521_print_one_value(&hi2c1);
+///		rpr0521_print_one_value();
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);	//in1
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);	//in2
 

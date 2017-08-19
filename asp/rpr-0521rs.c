@@ -28,7 +28,7 @@ void write_register(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t data) {
     data_to_send[0] = reg;
     data_to_send[1] = data;
 //    i2c.write( (int)((sad << 1) | I2C_WRITE ), &data_to_send[0], 2);
-    status = HAL_I2C_Master_Transmit(hi2c, RPR0521_DEVICE_ADRESS, &data_to_send[0], 2, timeout);
+    status = HAL_I2C_Master_Transmit(hi2c, (uint16_t)((RPR0521_DEVICE_ADRESS << 1) | I2C_WRITE), &data_to_send[0], 2, timeout);
     if(status != HAL_OK){
     	//送信エラー
     	syslog(LOG_NOTICE,"HAL_I2C_Master_Transmit error stats: %d\n\r", status);
@@ -37,6 +37,7 @@ void write_register(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t data) {
     }
 }
 
+/*
 //uint8_t read_register(uint8_t sad, uint8_t reg, uint8_t* buf, uint8_t buf_len) {
 uint8_t read_register(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t* buf, uint16_t buf_len) {
     uint8_t received_bytes;
@@ -45,51 +46,62 @@ uint8_t read_register(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t* buf, uint1
 
 //    i2c.write( (int)((sad << 1) | I2C_WRITE), (char*)&reg, (int)1 );
     //I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout
-    status = HAL_I2C_Master_Transmit(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
+    status = HAL_I2C_Master_Transmit(hi2c, (int16_t)((RPR0521_DEVICE_ADRESS << 1) | I2C_WRITE), buf, buf_len, timeout);
 //    status = HAL_I2C_Master_Transmit(hi2c, reg, buf, buf_len, timeout);
     if(status != HAL_OK){
     	//送信エラー
-    	syslog(LOG_NOTICE,"HAL_I2C_Master_Transmit error stats: %d\n\r", status);
+    	syslog(LOG_NOTICE,"read HAL_I2C_Master_Transmit error stats: %d\n\r", status);
     }else{
-    	syslog(LOG_NOTICE,"-- HAL_I2C_Master_Transmit OK\n\r");
+    	syslog(LOG_NOTICE,"--read HAL_I2C_Master_Transmit OK\n\r");
     }
     //    read_ok = i2c.read( (int)((sad << 1) | I2C_READ), (char*)buf, (int)buf_len);
     //I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout
     status = HAL_I2C_Master_Receive(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
 
     if( status == HAL_OK ){     //0 == success(ack)
+    	syslog(LOG_NOTICE,"--read HAL_I2C_Master_Receive OK\n\r");
         received_bytes = buf_len;
         }
     else{                   //non0 == fail (nack)
+    	syslog(LOG_NOTICE,"--read HAL_I2C_Master_Receive error status: %d\n\r", status);
         received_bytes = 0;
         }
     return( received_bytes );
 }
-
-uint8_t read_register2(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t* buf, uint16_t buf_len) {
+*/
+uint8_t read_register(I2C_HandleTypeDef *hi2c, uint16_t reg, uint8_t* buf, uint16_t buf_len) {
     uint8_t received_bytes;
     int read_ok;
     HAL_StatusTypeDef status;
 
+	syslog(LOG_NOTICE,"-- read_register2 start\n\r");
 //    i2c.write( (int)((sad << 1) | I2C_WRITE), (char*)&reg, (int)1 );
     //I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout
-    status = HAL_I2C_Master_Transmit(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
+///    status = HAL_I2C_Master_Transmit(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
+//    status = HAL_I2C_Master_Transmit(hi2c, (int16_t)((RPR0521_DEVICE_ADRESS << 1) | I2C_WRITE), buf, buf_len, timeout);
+//	buf[0] = 0x92;
+//	buf[1] = 0x00;
+    status = HAL_I2C_Master_Transmit(hi2c, (uint16_t)((RPR0521_DEVICE_ADRESS << 1) | I2C_WRITE), buf, buf_len, timeout);
 //    status = HAL_I2C_Master_Transmit(hi2c, reg, buf, buf_len, timeout);
     if(status != HAL_OK){
     	//送信エラー
-    	syslog(LOG_NOTICE,"HAL_I2C_Master_Transmit error stats: %d\n\r", status);
+    	syslog(LOG_NOTICE,"read2 HAL_I2C_Master_Transmit error stats: %d\n\r", status);
     }else{
-    	syslog(LOG_NOTICE,"-- HAL_I2C_Master_Transmit OK\n\r");
+    	syslog(LOG_NOTICE,"-- read2 HAL_I2C_Master_Transmit OK\n\r");
     }
     //    read_ok = i2c.read( (int)((sad << 1) | I2C_READ), (char*)buf, (int)buf_len);
     //I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData, uint16_t Size, uint32_t Timeout
-    status = HAL_I2C_Master_Receive(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
+//    status = HAL_I2C_Master_Receive(hi2c, RPR0521_DEVICE_ADRESS, buf, buf_len, timeout);
+    status = HAL_I2C_Master_Receive(hi2c, (uint16_t)(RPR0521_DEVICE_ADRESS << 1), buf, buf_len, timeout);
+//?    status = HAL_I2C_Master_Receive_Variable(hi2c, (uint16_t)(RPR0521_DEVICE_ADRESS << 1), buf, timeout);
 
     if( status == HAL_OK ){     //0 == success(ack)
         received_bytes = buf_len;
+    	syslog(LOG_NOTICE,"--read2 HAL_I2C_Master_Receive ok\n\r", status);
         }
     else{                   //non0 == fail (nack)
         received_bytes = 0;
+    	syslog(LOG_NOTICE,"--read2 HAL_I2C_Master_Receive error status: %d\n\r", status);
         }
     return( received_bytes );
 }
@@ -110,17 +122,19 @@ void rpr0521_print_one_value(I2C_HandleTypeDef *hi2c){
 
 
 uint8_t rpr0521_readId(I2C_HandleTypeDef *hi2c){
-    uint8_t id;
+    uint8_t id = RPR0521_MANUFACT;
     uint8_t read_bytes;
+    //	buf[0] = 0x92;
+    //	buf[1] = 0x00;
 
 //    read_bytes = read_register(SAD, RPR0521_MANUFACT, &id, 1);
-    read_bytes = read_register2(hi2c, RPR0521_MANUFACT, &id, 1);
+    read_bytes = read_register(hi2c, RPR0521_DEVICE_ADRESS, &id, 1);
     if ( read_bytes > 0 ){
-        uint8_t partid;
+        uint8_t partid = RPR0521_SYSTEM_CONTROL;
 
     	syslog(LOG_NOTICE, "Manufacturer: %u\n\r", id);
 //        read_bytes = read_register(SAD, RPR0521_SYSTEM_CONTROL, &partid, 1);
-        read_bytes = read_register(hi2c, RPR0521_SYSTEM_CONTROL, &partid, 1);
+        read_bytes = read_register(hi2c, RPR0521_DEVICE_ADRESS, &partid, 1);
         if ( read_bytes > 0 ){
         	syslog(LOG_NOTICE,"Part ID: %u\n\r", (partid & 0b00111111) );
         return(partid);
@@ -134,8 +148,6 @@ uint8_t rpr0521_readId(I2C_HandleTypeDef *hi2c){
     	syslog(LOG_NOTICE,"Manufacturer read failed.\n\r");
         return 255;
     }
-
-    return 255;	//dummy
 }
 
 
@@ -143,10 +155,10 @@ void rpr0521_wait_until_found(I2C_HandleTypeDef *hi2c){
     uint8_t id;
 
     id = rpr0521_readId(hi2c);
-//    while (id == 255){
-//        tslp_tsk(10000);	//org wate100
-//        id = rpr0521_readId(hi2c);
-//        }
+    while (id == 255){
+        tslp_tsk(10000);	//org wate100
+        id = rpr0521_readId(hi2c);
+        }
     return;
 }
 
@@ -193,9 +205,10 @@ bool_t rpr0521_read_data(I2C_HandleTypeDef *hi2c, uint16_t* data16){
 
     uint8_t data[RPR0521_DATA_LEN];
     uint8_t read_bytes;
+    data[0] = RPR0521_PS_DATA_LSBS;
 
 //    read_bytes = read_register(SAD, RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN);
-    read_bytes = read_register(hi2c, RPR0521_PS_DATA_LSBS, &data[0], RPR0521_DATA_LEN);
+    read_bytes = read_register(hi2c, RPR0521_DEVICE_ADRESS, &data[0], RPR0521_DATA_LEN);
     if (read_bytes == RPR0521_DATA_LEN){
         data16[0] = (data[0]) | (data[1] << 8); //ps_data
         data16[1] = (data[2]) | (data[3] << 8); //als_data0

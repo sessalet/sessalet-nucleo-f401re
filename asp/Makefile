@@ -163,6 +163,7 @@ ifdef USE_CXX
   APPL_CXXOBJS = $(APPLNAME).o
   APPL_COBJS =
 else
+#  APPL_COBJS = rpr0521_driver.o $(APPLNAME).o
   APPL_COBJS = rpr-0521rs.o $(APPLNAME).o
 endif
 APPL_COBJS := $(APPL_COBJS) log_output.o vasyslog.o t_perror.o strerror.o
