@@ -15,34 +15,22 @@
 #ifndef rpr0521_driver_h
 #define rpr0521_driver_h
 
-// #include "../../rohm-sensor-hal/rohm-sensor-hal/rohm_hal.h"         //types
+#define RPR0521_DEVICE_ADRESS 0x38
+
+#define RPR0521RS_ERROR                            (-1)
+
 
 /* rpr0521 driver*/
 
-// #define USE_MBED_LIB
-
-#ifdef USE_MBED_LIB
-
-uint8_t rpr0521_readId();
-void rpr0521_wait_until_found();
-bool_t rpr0521_read_data(uint16_t* data16);
-void rpr0521_initial_setup();
-
-//from hello
-void rpr0521_print_one_value();
-
-
-#else
 uint8_t rpr0521_readId(I2C_HandleTypeDef *hi2c);
 void rpr0521_wait_until_found(I2C_HandleTypeDef *hi2c);
 bool_t rpr0521_read_data(I2C_HandleTypeDef *hi2c, uint16_t* data16);
 void rpr0521_initial_setup(I2C_HandleTypeDef *hi2c);
 void rpr0521_print_one_value(I2C_HandleTypeDef *hi2c);
-
-#endif
-
 void rpr0521_soft_reset();
 void rpr0521_clear_interrupt();
+unsigned char get_psalsval(I2C_HandleTypeDef *hi2c, unsigned short *ps, float *als);
+unsigned char get_rawpsalsval(I2C_HandleTypeDef *hi2c, unsigned char *data);
+
 
 #endif
-

@@ -76,12 +76,76 @@
 #define LOOP_REF		ULONG_C(1000000)	/* 速度計測用のループ回数 */
 #endif /* LOOP_REF */
 
+#define COVER_MOTOR 0
+#define SPLAY_MOTOR 1
+
+#define PUSH 0
+#define NOTPUSH 1
+
+/*
+ * フラグのビット割り当て
+ */
+#define SEAT_ON       0x01U		// 着座検出
+#define SEAT_OFF      0x02U     // 起立検出
+#define DETECTED      0x04U     // 人検出
+#define UNDETECTED    0x08U     // 人未検出
+#define SPLAY_ON      0x10U
+#define SPLAY_OFF     0x20U
+
+#define CALIB_FONT (EV3_FONT_SMALL)
+#define CALIB_FONT_WIDTH (6/*TODO: magic number*/)
+#define CALIB_FONT_HEIGHT (8/*TODO: magic number*/)
+
+#define NOZZLE_DEGREE 180
+#define NOZZLE_OFF_DEGREE -180
+#define NOZZLE_SPEED 50 //persent
+#define SPLAY_DEGREE 90
+#define SPLAY_CLOSE_DEGREE -90
+#define SPLAY_OPEN_SPEED 50 //persent
+#define SPLAY_CLOSE_SPEED 50 //persent
+#define FLASH_MOTOR_SPEED 50 //persent
+#define FLASH_DEGREE 90
+#define FLASH_STOP_MOTOR_SPEED 50 //persent
+#define FLASH_STOP_DEGREE -90
+#define FLASH_TIME 3   //水を流す時間
+
+#define COVER_OPEN_DEGREE 270
+#define COVER_CLOSE_DEGREE -270
+#define COVER_OPEN_SPEED 10 //persent
+#define COVER_CLOSE_SPEED 10 //persent
+
+#define COVER_CLOSE_TIME 5 // 「着座してない」検出から自動的にふたが閉まるまでの時間
+
+//#define HUMAN_DETECT 1000 //超音波センサーで人検出する距離
+#define HUMAN_DETECT 10 //超音波センサーで人検出する距離	//TODO 要調整
+#define UNDETECTED_VAL 0
+#define DETECTED_VAL 1
+
+#define SEATED_MIN 10 //着座とみなす色
+#define SEATED_MAX 50 //着座とみなす色
+
+#define FLASH_SOUND NOTE_E4  //流水音
+
+#define SPLAY_TIMER 10  //スプレーが自動的に止まるまでの時間
+#define FLASH_TIMER 10
+
+
 /*
  *  関数のプロトタイプ宣言
  */
 #ifndef TOPPERS_MACRO_ONLY
 
 extern void	main_task(intptr_t exinf);
+
+ //extern void sessalet_main_task(intptr_t exinf);
+ //extern void seated_task(intptr_t exinf);
+ //extern void flash_task(intptr_t exinf);
+ //extern void splay_task(intptr_t exinf);
+ extern void human_check_cyc(intptr_t exinf);
+ //extern void seated_check_task(intptr_t exinf);
+ //extern void flush_check_cyc(intptr_t exinf);
+
+
 #ifdef CPUEXC1
 extern void	cpuexc_handler(void *p_excinf);
 #endif /* CPUEXC1 */
