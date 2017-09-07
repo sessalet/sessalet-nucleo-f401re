@@ -463,9 +463,6 @@ void main_task(intptr_t exinf)
 				}
 			}
 			if((flg_sessalet == DETECTED) && (flg_seated == SEAT_ON)){//着座検出 -> 着座状態へ遷移
-				memset(msg, 0x00, sizeof(msg));
-				sprintf(msg, "--- act seated task, from main task ---\r\n");
-				syslog(LOG_ERROR, msg, sizeof(msg));
 				syslog(LOG_ERROR, "seated mode");
 				int splay_flg = 0;
 				while(1){	//着座中のループ
@@ -520,9 +517,7 @@ void main_task(intptr_t exinf)
 			}else if(flg_sessalet == DETECTED){	//人検出
 
 				if(cover_mode2 == cover_close){
-					memset(msg, 0x00, sizeof(msg));
-					sprintf(msg, "--- cover open ---\r\n");
-					syslog(LOG_ERROR, msg, sizeof(msg));
+					syslog(LOG_ERROR, "--- cover open ---\r\n");
 					coveropen();
 					cover_mode2 = cover_open;
 					dly_tsk(1000);
@@ -543,9 +538,7 @@ void main_task(intptr_t exinf)
 		if(timeout_flg == 1){
 			timeout_flg = 0;
 			timeout_counter = 0;
-			memset(msg, 0x00, sizeof(msg));
-			sprintf(msg, "--- timeout cover close ---\r\n");
-			syslog(LOG_ERROR, msg, sizeof(msg));
+			syslog(LOG_ERROR, "--- timeout cover close ---\r\n");
 			coverclose();
 			cover_mode2 = cover_close;
 		}
