@@ -153,7 +153,7 @@ CFLAGS = $(COPTS) $(CDEFS) $(INCLUDES)
 #
 #  アプリケーションプログラムに関する定義
 #
-APPLNAME = sample1
+APPLNAME = sessalet
 APPLDIR =
 APPL_CFG = $(APPLNAME).cfg
 

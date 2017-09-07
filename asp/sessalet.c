@@ -1,11 +1,12 @@
 
+
 #include <kernel.h>
 #include <t_syslog.h>
 #include <t_stdlib.h>
 #include "syssvc/serial.h"
 #include "syssvc/syslog.h"
 #include "kernel_cfg.h"
-#include "sample1.h"
+#include "sessalet.h"
 
 #include "stm32f4xx_hal.h"
 #include "stm32f401xe.h"
@@ -42,16 +43,10 @@ typedef enum Splay{
 	splay
 }Splay;
 
-//typedef enum CoverMode{
-//	cover_close = 0,
-//	cover_open
-//}CoverMode;
-
 #define cover_close 0
 #define cover_open 1
 
 static Splay splay_mode = stop;	//使用
-//static CoverMode cover_mode = cover_close;
 static int cover_mode = cover_close;
 static int cover_mode2 = 0;
 static Human human_mode = undetected;
@@ -83,13 +78,6 @@ svc_perror(const char *file, int_t line, const char *expr, ER ercd)
  *  並行実行されるタスクへのメッセージ領域
  */
 char	message[3];
-
-/*
- *  ループ回数
- */
-//ulong_t	task_loop;		/* タスク内でのループ回数 */
-//ulong_t	tex_loop;		/* 例外処理ルーチン内でのループ回数 */
-
 
 /*
  *  CPU例外ハンドラ
@@ -181,9 +169,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pins : PA5 PA6 PA7 PA10 */
   GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-//  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-//  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -211,12 +197,9 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-
-
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_10, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
-
 
 }
 
@@ -265,7 +248,6 @@ static void MX_I2C1_Init(void)
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_ENABLE;
   if (HAL_I2C_Init(&hi2c1) != HAL_OK)
   {
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_INFO, "err: HAL_I2C_Init != HAL_OK");
   }else{
 		syslog(LOG_INFO, "ok: HAL_I2C_Init == HAL_OK status:%u", hi2c1.State);
@@ -279,9 +261,6 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
   GPIO_InitTypeDef GPIO_InitStruct;
   if(hi2c->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C1_MspInit 0 */
-
-  /* USER CODE END I2C1_MspInit 0 */
 //	    __HAL_RCC_I2C1_CLK_ENABLE();	//TODO こっちに移動した cf.http://memo.tank.jp/archives/12040
 
     /**I2C1 GPIO Configuration
@@ -297,9 +276,6 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 
     /* Peripheral clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
-  /* USER CODE BEGIN I2C1_MspInit 1 */
-
-  /* USER CODE END I2C1_MspInit 1 */
   }
 
 }
@@ -309,9 +285,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 
   if(hi2c->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C1_MspDeInit 0 */
-
-  /* USER CODE END I2C1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_I2C1_CLK_DISABLE();
 
@@ -320,10 +293,6 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
     PB9     ------> I2C1_SDA
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
-
-  /* USER CODE BEGIN I2C1_MspDeInit 1 */
-
-  /* USER CODE END I2C1_MspDeInit 1 */
   }
 
 }
@@ -332,10 +301,8 @@ int seated_check(){
 	int result = UNDETECTED_VAL;
 	float als_val;
 	unsigned short ps_val;
-//	unsigned char rc = _human_sensor.get_psalsval(&ps_val, &als_val);
 	unsigned char rc = get_psalsval(&hi2c1, &ps_val, &als_val);
 	if (rc == 0) {
-//		syslog(LOG_ERROR, "seated check ok: %u", ps_val);
 		if (ps_val > HUMAN_DETECT) {
 			result = DETECTED_VAL;
 		}
@@ -346,7 +313,6 @@ int seated_check(){
 
 int human_check2(){
 	GPIO_PinState state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_6);
-//	syslog(LOG_INFO, "people state:%d\r\n", state);
 	if(state == GPIO_PIN_SET){
 		return DETECTED_VAL;
 	}else{
@@ -358,13 +324,11 @@ void human_check_cyc(intptr_t unused) {
 	int result = human_check2();
 	switch(result){
 		case DETECTED_VAL:
-//TODO				  set_flg(flg_sessalet, DETECTED);
 			syslog(LOG_ERROR, "human detected");
 			flg_sessalet = DETECTED;
 			human_mode = detected;
 			break;
 		case UNDETECTED_VAL:
-//TODO				  set_flg(flg_sessalet, UNDETECTED);
 			syslog(LOG_ERROR, "human undetected");
 			flg_sessalet = UNDETECTED;
 			human_mode = detected;
@@ -387,37 +351,25 @@ void flash_task(intptr_t unused) {
 
 void coverclose(){
 	motor_setvalue(COVER_MOTOR, FOWARD, 100);
-//	cover_motor.drive(100);
 	dly_tsk(1000);
 	motor_setvalue(COVER_MOTOR, FOWARD, 0);
-//	cover_motor.drive(0);
 	dly_tsk(3000);	// フタが閉まるまで待つ（パカパカするの防止）
 }
 
 void coveropen(){
 	motor_setvalue(COVER_MOTOR, REVERSE, 100);
-//	cover_motor.drive(-100);
 	dly_tsk(3000);
 	motor_setvalue(COVER_MOTOR, REVERSE, 0);
-//	cover_motor.drive(0);
 	dly_tsk(1000);	// 少し待つ
 }
 
 void spraystart(){
 	motor_setvalue(SPLAY_MOTOR, FOWARD, 100);
-//	spray_motor.drive(100);
-//?	dly_tsk(3000);
-//	motor_setvalue(SPLAY_MOTOR, FOWARD, 0);
-//	cover_motor.drive(0);
 	dly_tsk(1000);	// 少し待つ
 }
 
 void spraystop(){
-//?	motor_setvalue(SPLAY_MOTOR, FOWARD, 100);
-//	spray_motor.drive(100);
-//?	dly_tsk(500);
 	motor_setvalue(SPLAY_MOTOR, FOWARD, 0);
-//	spray_motor.drive(0);
 	dly_tsk(100);
 }
 
@@ -490,7 +442,6 @@ void main_task(intptr_t exinf)
 	    dly_tsk(5000);
 
 		  // 人検出か着座検出を待つ。5秒間たったらふたを閉める
-		//TODO	  ercd = twai_flg(flg_sessalet, DETECTED|SEAT_ON, TWF_ORW, &flgptn, 5000);
 		timeout_flg = 0;
 		timeout_counter = 0;
 		while(timeout_flg == 0){	//タイムアウトがきたら1に変わっているはず
@@ -514,9 +465,7 @@ void main_task(intptr_t exinf)
 			if((flg_sessalet == DETECTED) && (flg_seated == SEAT_ON)){//着座検出 -> 着座状態へ遷移
 				memset(msg, 0x00, sizeof(msg));
 				sprintf(msg, "--- act seated task, from main task ---\r\n");
-				//			(void)serial_wri_dat(SIO_PORT_BT, msg, strlen(msg));
 				syslog(LOG_ERROR, msg, sizeof(msg));
-				// TODO:ほんとは着座を検知してから
 				syslog(LOG_ERROR, "seated mode");
 				int splay_flg = 0;
 				while(1){	//着座中のループ
@@ -571,7 +520,6 @@ void main_task(intptr_t exinf)
 			}else if(flg_sessalet == DETECTED){	//人検出
 
 				if(cover_mode2 == cover_close){
-	///  				  action.open();
 					memset(msg, 0x00, sizeof(msg));
 					sprintf(msg, "--- cover open ---\r\n");
 					syslog(LOG_ERROR, msg, sizeof(msg));
@@ -598,138 +546,11 @@ void main_task(intptr_t exinf)
 			memset(msg, 0x00, sizeof(msg));
 			sprintf(msg, "--- timeout cover close ---\r\n");
 			syslog(LOG_ERROR, msg, sizeof(msg));
-			//  		    action.close();
 			coverclose();
 			cover_mode2 = cover_close;
 		}
 		dly_tsk(500);
 	}
-	//end
-	while(1){
-//		syslog(LOG_INFO, "count:%d", cnt);
-		GPIO_PinState state2 = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
-		  if(state2 == NOTPUSH){
-			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
-			syslog(LOG_NOTICE, "state : set.");
-
-		  }else{
-			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
-				syslog(LOG_NOTICE, "state : reset.");
-		  }
-
-		//LED点滅
-//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-//		  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
-//		cnt++;
-//		if(cnt > 5){
-//			break;
-//		}
-//		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
-//		  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5);
-		// 人検知センサーチェック
-//		  GPIO_PinState state = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_7);
-//		  GPIO_PinState state = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_6);
-//			syslog(LOG_INFO, "people state:%d\r\n", state);
-/*		  if(state == GPIO_PIN_RESET){
-			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
-		  }else{
-			  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
-		  }
-*/
-
-		// ROHM 近接センサー読み取り
-		rpr0521_print_one_value(&hi2c1);
-
-/*
-	    sConfigOC.Pulse = 100;
-	    HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);
-	    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-
-
-		// モーター動作check
-		motor_setvalue(COVER_MOTOR, pwm_value);
-		  if(pwm_value == 0) step = 200;
-		  if(pwm_value > 1001) step = -200;
-		  pwm_value += step;
-
-		  if(splay_value == 0){
-			  splay_value = 100;
-		  }else{
-			  splay_value = 0;
-		  }
-		  motor_setvalue(SPLAY_MOTOR, splay_value);
-//		  tslp_tsk(1000);
-*/
-/*			motor_setvalue(COVER_MOTOR, 0, 0);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 10);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 20);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 50);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 70);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 100);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 1, 50);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 1, 100);
-			tslp_tsk(1000);
-			motor_setvalue(COVER_MOTOR, 0, 0);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 10);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 20);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 30);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 50);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 70);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 100);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 1, 50);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 1, 100);
-			tslp_tsk(1000);
-			motor_setvalue(SPLAY_MOTOR, 0, 0);
-			tslp_tsk(1000);
-*/
-			/*
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);	//in1 1のin2
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 0);	//in1 1のin1
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, 0);	//in1 2のin1
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 1);	//in2 2のin2
-
-			sConfigOC.Pulse = 999;
-		  HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);
-		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-		  HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2);
-		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-
-			tslp_tsk(1000);
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);	//in1 1のin2
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, 1);	//in1 1のin1
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, 1);	//in1 2のin1
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, 0);	//in2 2のin2
-			sConfigOC.Pulse = 999;
-		  HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1);
-		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-		  HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2);
-		  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-*/
-
-			//			HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
-//			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
-
-			tslp_tsk(1000);
-//			  tslp_tsk(500);
-
-	}
-
-	syslog(LOG_NOTICE, "Sample program ends.");
 	SVC_PERROR(ext_ker());
 	assert(0);
 }
@@ -741,21 +562,13 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig;
 
-/*  htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 3;
-  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 1000;
-  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-*/
   htim2.Init.Period = 0xFFFF;
   htim2.Init.Prescaler = 0;
   htim2.Init.ClockDivision = 0;
-//  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
   {
 	  // TODO エラー処理
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIM_Base_Init != HAL_OK");
   }
 
@@ -763,14 +576,12 @@ static void MX_TIM2_Init(void)
   if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
   {
 	  // TODO エラー処理
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIM_ConfigClockSource != HAL_OK");
   }
 
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
   {
 	  // TODO エラー処理
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIM_PWM_Init != HAL_OK");
   }
 
@@ -779,7 +590,6 @@ static void MX_TIM2_Init(void)
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
 	  // TODO エラー処理
-	  //    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIMEx_MasterConfigSynchronization != HAL_OK");
   }
 
@@ -790,13 +600,11 @@ static void MX_TIM2_Init(void)
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
 	  // TODO エラー処理
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIM_PWM_ConfigChannel != HAL_OK");
   }
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
 	  // TODO エラー処理
-//    _Error_Handler(__FILE__, __LINE__);
 		syslog(LOG_ERROR, "HAL_TIM_PWM_ConfigChannel2 != HAL_OK");
   }
 
@@ -810,14 +618,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 
   if(htim_base->Instance==TIM2)
   {
-  /* USER CODE BEGIN TIM2_MspInit 0 */
-
-  /* USER CODE END TIM2_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM2_CLK_ENABLE();
-  /* USER CODE BEGIN TIM2_MspInit 1 */
-
-  /* USER CODE END TIM2_MspInit 1 */
   }
 
 }
@@ -828,10 +630,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
 	  GPIO_InitTypeDef GPIO_InitStruct;
 	  if(htim->Instance==TIM2)
 	  {
-	  /* USER CODE BEGIN TIM2_MspPostInit 0 */
-
-	  /* USER CODE END TIM2_MspPostInit 0 */
-
 	    /**TIM2 GPIO Configuration
 	    PA0-WKUP     ------> TIM2_CH1
 	    PA1     ------> TIM2_CH2
@@ -843,26 +641,6 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim)
 	    GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
 	    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-	  /* USER CODE BEGIN TIM2_MspPostInit 1 */
-
-	  /* USER CODE END TIM2_MspPostInit 1 */
 	  }
 }
 
-#if 0
-void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_pwm)
-{
-
-	  if(htim_pwm->Instance==TIM2)
-	  {
-	  /* USER CODE BEGIN TIM2_MspDeInit 0 */
-
-	  /* USER CODE END TIM2_MspDeInit 0 */
-	    /* Peripheral clock disable */
-	    __HAL_RCC_TIM2_CLK_DISABLE();
-	  /* USER CODE BEGIN TIM2_MspDeInit 1 */
-
-	  /* USER CODE END TIM2_MspDeInit 1 */
-	  }
-}
-#endif
